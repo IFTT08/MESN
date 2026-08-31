@@ -37,7 +37,7 @@ multiple intermediate classifiers.
 The proposed **MESN** consists of:
 
 -   Representation-similarity-based network stitching
--   Lightweight (1`\times1`{=tex}) convolution stitching layers
+-   Lightweight (1*1) convolution stitching layers
 -   Data-driven initialization
 -   Knowledge distillation
 -   Stitching direction selection
