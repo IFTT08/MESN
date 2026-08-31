@@ -370,92 +370,25 @@ dataset/
 
 # Requirements
 
-The implementation is based on **PyTorch**.
+## Hardware
 
-A GPU environment with CUDA support is recommended for reproducing the
-experiments.
+- NVIDIA GPU (recommended)
+- CUDA-compatible environment
 
-Please refer to the source code and `train.sh` for the corresponding
-experimental configuration.
+## Software
 
-------------------------------------------------------------------------
+The original experiments were conducted using:
 
-# Training
+- Ubuntu 16.04.5 LTS
+- Python 3.7
+- PyTorch 1.4.0
+- CUDA 11.0
 
-The main training scripts are:
-
-``` text
-train_menet.py
-train_self_trans.py
-```
-
-For convenience, the repository also provides:
-
-``` bash
-bash train.sh
-```
-
-The training configuration can be adjusted according to the selected
-dataset, backbone network, number of exits, and experimental setting.
+The code should also work with newer PyTorch versions (≥ 1.4.0).
 
 ------------------------------------------------------------------------
 
-# Testing
 
-Test the baseline MEN:
-
-``` bash
-python test_menet.py
-```
-
-Test the proposed MESN:
-
-``` bash
-python test_self_trans.py
-```
-
-The testing procedures provide exit-wise classification results for
-evaluating the predictive performance of the multi-exit networks.
-
-------------------------------------------------------------------------
-
-# Reproducibility
-
-To facilitate independent verification and further research, this
-repository provides the implementation required for reproducing the main
-experiments in the paper.
-
-The repository includes:
-
--   Baseline MEN training
--   Baseline MEN testing
--   MESN training
--   MESN testing
--   IDD training
--   Adaptive inference experiments
--   Compression-method comparison
--   Model implementations
--   Supporting utilities and training procedures
-
-------------------------------------------------------------------------
-
-# Relationship to the Paper
-
-  Paper Component                 Implementation
-  ------------------------------- --------------------------
-  Baseline MEN training           `train_menet.py`
-  Baseline MEN testing            `test_menet.py`
-  MESN training                   `train_self_trans.py`
-  MESN testing                    `test_self_trans.py`
-  IDD training strategy           `helper/loops.py`
-  Adaptive inference              `adaptive_inference.py`
-  Different compression methods   `construct_model_svd.py`
-  Model definitions               `models/`
-  Supporting utilities            `helper/`, `utils/`
-  Comparison methods              `comparators/`
-  Dataset-related files           `dataset/`
-
-------------------------------------------------------------------------
 
 # Citation
 
