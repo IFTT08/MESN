@@ -43,9 +43,6 @@ The proposed **MESN** consists of:
 -   Stitching direction selection
 -   Progressive reuse of feature reduction layers
 
-This repository provides the implementation required to reproduce the
-main experiments reported in the paper.
-
 ------------------------------------------------------------------------
 
 ## Main Components
