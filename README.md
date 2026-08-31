@@ -1,324 +1,485 @@
-# ME-Net: A Unified Experimental Benchmark for Multi-Exit Network Design
+# MESN: Multi-Exit Stitched Network
+
+This repository provides the complete implementation of the experiments
+for the paper:
+
+**Representation-Similarity Network Stitching for Efficient Parameter
+Reduction in Multi-Exit Networks**
+
+The proposed method constructs a **Multi-Exit Stitched Network (MESN)**
+by identifying representation-similar feature layers across intermediate
+classifiers and connecting them through lightweight stitching layers.
+This enables redundant feature reduction layers to be removed and shared
+across multiple exits, thereby reducing parameter redundancy while
+preserving the predictive capability of multi-exit networks.
+
+The repository contains the implementation of the baseline Multi-Exit
+Network (MEN), MESN construction and training, the proposed IDD training
+strategy, adaptive inference experiments, and comparative experiments
+with different compression methods.
+
+------------------------------------------------------------------------
 
 ## Overview
 
-ME-Net is a unified experimental framework for systematically studying the design factors of Multi-Exit Networks (MENs). Multi-exit networks improve inference efficiency by introducing intermediate classifiers at different depths of a neural network, allowing predictions to be generated before reaching the final layer.
+Multi-Exit Networks (MENs) introduce intermediate classifiers at
+different depths of a backbone network, allowing predictions to be
+generated before the final layer. Although intermediate classifiers
+provide adaptive inference capability, independently maintaining feature
+reduction layers for multiple exits introduces considerable parameter
+redundancy.
 
-Existing studies often employ different network architectures, classifier structures, training settings, and evaluation protocols, making fair comparison difficult. This repository provides a reproducible benchmark for analyzing the influence of key design factors under controlled experimental conditions.
+This work addresses this problem through **network stitching**. By
+connecting representation-similar feature representations from different
+exits, feature reduction layers can be progressively reused across
+multiple intermediate classifiers.
 
-The framework supports multiple backbone networks, configurable intermediate classifiers, flexible exit placement strategies, varying numbers of exits, and different training methods.
+The proposed **MESN** consists of:
 
-The implementation is based on PyTorch and has been evaluated on CIFAR-10, CIFAR-100, and Tiny-ImageNet datasets.
+-   Representation-similarity-based network stitching
+-   Lightweight (1`\times1`{=tex}) convolution stitching layers
+-   Data-driven initialization
+-   Knowledge distillation
+-   Stitching direction selection
+-   Progressive reuse of feature reduction layers
 
----
+This repository provides the implementation required to reproduce the
+main experiments reported in the paper.
 
-# Project Structure
+------------------------------------------------------------------------
 
-```text
-ME-Net/
-│
-├── datasets/
-├── helper/
-├── models/
-├── train_menm.py
-├── train_menm8.py
-├── test_iconly.py
-├── test_menm.py
-│
-└── README.md
+## Main Components
+
+### 1. Baseline Multi-Exit Network
+
+The repository provides training and testing implementations for the
+original Multi-Exit Network.
+
+-   `train_menet.py` --- training of the baseline MEN
+-   `test_menet.py` --- testing of the baseline MEN
+
+The baseline MEN is used as the reference network for evaluating
+parameter reduction and classification performance after network
+stitching.
+
+### 2. Multi-Exit Stitched Network
+
+The proposed MESN is constructed by stitching feature representations
+between intermediate classifiers.
+
+The implementation includes:
+
+-   MESN construction
+-   Stitching layer implementation
+-   Feature representation transformation
+-   Parameter sharing
+-   Training and testing of stitched multi-exit networks
+
+The corresponding scripts are:
+
+-   `train_self_trans.py` --- training of the stitched multi-exit
+    network
+-   `test_self_trans.py` --- testing of the stitched multi-exit network
+
+### 3. IDD Training Strategy
+
+The proposed IDD training strategy is implemented in:
+
+``` text
+helper/loops.py
 ```
 
----
+IDD consists of three complementary components:
 
-# Research Objectives
+1.  **Data-driven initialization (Init)**\
+    Provides suitable initial parameters for the stitching layer based
+    on the feature representations to be connected.
 
-This project investigates the following key design factors in Multi-Exit Networks:
+2.  **Knowledge distillation (KD)**\
+    Uses the predictive information from the original computational path
+    to guide the optimization of the newly constructed stitched path.
 
-1. Backbone Network Architecture
-2. Intermediate Classifier Structure
-3. Intermediate Classifier Placement
-4. Number of Intermediate Classifiers
-5. Training Strategy
+3.  **Stitching direction selection (Dir)**\
+    Determines how branch networks are progressively connected and how
+    feature reduction layers are reused across different exits.
 
-All factors can be independently configured and evaluated.
+### 4. Adaptive Inference
 
----
+The repository includes experiments for evaluating the adaptive
+inference capability of the proposed MESN.
 
-# Supported Datasets
+The corresponding implementation is:
 
-## CIFAR-10
+``` bash
+python adaptive_inference.py
+```
 
-CIFAR-10 contains 60,000 color images of size 32×32 distributed among 10 classes.
+The script includes two adaptive inference scenarios:
 
-- Training Images: 50,000
-- Test Images: 10,000
+-   **Anytime prediction**
+-   **Budgeted batch classification**
 
-Reference:
+These experiments evaluate the behavior of different exits under varying
+inference requirements and computational budgets.
 
-Krizhevsky, A. (2009). *Learning Multiple Layers of Features from Tiny Images*.
+### 5. Different Compression Methods
 
-Website:
+The implementation of the experiment **Impact of Different Compression
+Methods on Multi-Exit Network Performance** is provided in:
 
-https://www.cs.toronto.edu/~kriz/cifar.html
+``` bash
+python construct_model_svd.py
+```
 
----
+This experiment compares the proposed network stitching strategy with
+other parameter compression approaches considered in the paper.
 
-## CIFAR-100
+------------------------------------------------------------------------
 
-CIFAR-100 is similar to CIFAR-10 but contains 100 object categories.
+## Project Structure
 
-- Training Images: 50,000
-- Test Images: 10,000
-- Classes: 100
+``` text
+MESN/
+│
+├── comparators/
+│   └──                     # Comparison methods
+│
+├── dataset/
+│   └──                     # Dataset-related files
+│
+├── helper/
+│   └── loops.py            # Training loops, including IDD training
+│
+├── models/
+│   └──                     # Backbone, MEN and MESN models
+│
+├── utils/
+│   └──                     # Utility functions
+│
+├── README.md
+│
+├── adaptive_inference.py   # Anytime prediction and budgeted batch classification
+│
+├── construct_model_svd.py  # Different compression methods
+│
+├── test_menet.py           # Test baseline MEN
+│
+├── test_self_trans.py      # Test MESN
+│
+├── train.sh                # Training commands
+│
+├── train_menet.py          # Train baseline MEN
+│
+└── train_self_trans.py     # Train MESN
+```
 
-Reference:
+------------------------------------------------------------------------
 
-Krizhevsky, A. (2009). *Learning Multiple Layers of Features from Tiny Images*.
+## Experimental Pipeline
 
-Website:
+The general experimental workflow is:
 
-https://www.cs.toronto.edu/~kriz/cifar.html
+``` text
+Backbone Network
+       │
+       ▼
+Multi-Exit Network (MEN)
+       │
+       ├──────────────► Baseline Evaluation
+       │
+       ▼
+Representation Similarity Analysis
+       │
+       ▼
+Network Stitching
+       │
+       ▼
+Multi-Exit Stitched Network (MESN)
+       │
+       ▼
+IDD Training
+       │
+       ├── Data-driven Initialization
+       ├── Knowledge Distillation
+       └── Stitching Direction Selection
+       │
+       ▼
+MESN Evaluation
+       │
+       ├── Classification Performance
+       ├── Parameter Reduction
+       ├── Exit-wise Performance
+       └── Inference Efficiency
+       │
+       ▼
+Adaptive Inference Evaluation
+       │
+       ├── Anytime Prediction
+       └── Budgeted Batch Classification
+```
 
----
+------------------------------------------------------------------------
 
-## Tiny-ImageNet
+# Experiments
 
-Tiny-ImageNet is a subset of ImageNet containing 200 classes.
+## 1. Baseline Multi-Exit Network
 
-- Training Images per Class: 500
-- Validation Images per Class: 50
-- Test Images per Class: 50
-- Image Size: 64×64
+Train the baseline MEN:
 
-Dataset Source:
+``` bash
+python train_menet.py
+```
 
-https://www.kaggle.com/datasets/akash2sharma/tiny-imagenet
+Test the trained MEN:
 
----
+``` bash
+python test_menet.py
+```
+
+The baseline results are used as the reference for evaluating the
+proposed MESN.
+
+------------------------------------------------------------------------
+
+## 2. Multi-Exit Stitched Network
+
+Train the proposed MESN:
+
+``` bash
+python train_self_trans.py
+```
+
+Test the trained MESN:
+
+``` bash
+python test_self_trans.py
+```
+
+The results are used to evaluate the effect of network stitching on
+predictive performance and model complexity.
+
+------------------------------------------------------------------------
+
+## 3. IDD Training Strategy
+
+The IDD training strategy is integrated into the training procedure
+through:
+
+``` text
+helper/loops.py
+```
+
+The implementation incorporates:
+
+-   Data-driven initialization
+-   Knowledge distillation
+-   Stitching direction selection
+
+These components jointly support the optimization of the stitching
+layers and the construction of the MESN.
+
+------------------------------------------------------------------------
+
+## 4. Adaptive Inference
+
+Run the adaptive inference experiments:
+
+``` bash
+python adaptive_inference.py
+```
+
+### Anytime Prediction
+
+Anytime prediction evaluates how prediction performance changes as
+additional computation is allowed.
+
+This experiment is used to examine whether MESN preserves the
+progressive prediction capability of the original MEN while reducing
+parameter redundancy.
+
+### Budgeted Batch Classification
+
+Budgeted batch classification evaluates the utilization of different
+exits under a limited computational budget.
+
+This experiment analyzes the trade-off between prediction performance
+and computational cost after network stitching.
+
+------------------------------------------------------------------------
+
+## 5. Impact of Different Compression Methods
+
+Run the compression-method comparison:
+
+``` bash
+python construct_model_svd.py
+```
+
+This corresponds to the experiment:
+
+**Impact of Different Compression Methods on Multi-Exit Network
+Performance**
+
+------------------------------------------------------------------------
+
+# Evaluation
+
+The experiments evaluate MEN and MESN from several complementary
+perspectives.
+
+### Classification Performance
+
+Classification accuracy is evaluated for different exits to determine
+whether network stitching affects the predictive capability of
+intermediate classifiers.
+
+### Parameter Reduction
+
+The number of parameters is measured before and after stitching to
+quantify the reduction of redundant parameters in intermediate
+classifiers.
+
+### Computational Complexity
+
+The inference characteristics of different exits include:
+
+-   FLOPs
+-   Inference latency
+-   Peak memory consumption
+
+### Adaptive Inference
+
+The adaptive inference experiments evaluate the behavior of different
+exits under varying inference requirements and computational budgets.
+
+------------------------------------------------------------------------
+
+# Datasets
+
+The experiments use:
+
+-   CIFAR-10
+-   CIFAR-100
+-   Tiny-ImageNet
+
+Please prepare the corresponding datasets according to the directory
+structure expected by the implementation under:
+
+``` text
+dataset/
+```
+
+------------------------------------------------------------------------
 
 # Requirements
 
-## Hardware
+The implementation is based on **PyTorch**.
 
-- NVIDIA GPU (recommended)
-- CUDA-compatible environment
+A GPU environment with CUDA support is recommended for reproducing the
+experiments.
 
-## Software
+Please refer to the source code and `train.sh` for the corresponding
+experimental configuration.
 
-The original experiments were conducted using:
+------------------------------------------------------------------------
 
-- Ubuntu 16.04.5 LTS
-- Python 3.7
-- PyTorch 1.4.0
-- CUDA 11.0
+# Training
 
-The code should also work with newer PyTorch versions (≥ 1.4.0).
+The main training scripts are:
 
----
-
-# Installation
-
-Clone the repository:
-
-```bash
-git clone https://github.com/your_repository/ME-Net.git
-cd ME-Net
+``` text
+train_menet.py
+train_self_trans.py
 ```
 
-Install dependencies:
+For convenience, the repository also provides:
 
-```bash
-pip install torch torchvision numpy scipy tqdm
+``` bash
+bash train.sh
 ```
 
-Verify PyTorch installation:
+The training configuration can be adjusted according to the selected
+dataset, backbone network, number of exits, and experimental setting.
 
-```bash
-python -c "import torch; print(torch.__version__)"
+------------------------------------------------------------------------
+
+# Testing
+
+Test the baseline MEN:
+
+``` bash
+python test_menet.py
 ```
 
----
+Test the proposed MESN:
 
-# Code Information
-
-## Backbone Network Training
-
-Train a baseline backbone network without intermediate exits:
-
-```bash
-python train_backbone.py
+``` bash
+python test_self_trans.py
 ```
 
-Supported backbones include:
+The testing procedures provide exit-wise classification results for
+evaluating the predictive performance of the multi-exit networks.
 
-- ResNet18
-- MobileNetV1
-- Other configurable architectures
-
----
-
-## Multi-Exit Network Training
-
-Train a standard Multi-Exit Network:
-
-```bash
-python train_menm.py
-```
-
----
-
-## Multi-Exit Network with Multiple Exits
-
-Train networks containing larger numbers of exits:
-
-```bash
-python train_menm8.py
-```
-
-This script is mainly used for studying the effect of exit quantity.
-
----
-
-## Testing
-
-Evaluate trained models:
-
-```bash
-python test_menm.py
-```
-
-The script reports classification accuracy for all exits and the final classifier.
-
----
-
-# Intermediate Classifier Configuration
-
-Intermediate classifier structures can be modified in:
-
-```text
-models/util/
-```
-
-Researchers can customize:
-
-- Classifier depth
-- Feature aggregation strategy
-- Pooling operations
-- Fully connected layers
-
-This enables systematic comparison of different intermediate classifier designs.
-
----
-
-# Experimental Methodology
-
-The experimental workflow follows these steps:
-
-### Step 1: Train Backbone Networks
-
-Train baseline models without exits.
-
-```bash
-python train_backbone.py
-```
-
-### Step 2: Insert Intermediate Classifiers
-
-Configure:
-
-- Classifier structure
-- Classifier position
-- Number of exits
-
-Location:
-
-```text
-models/util/
-```
-
-### Step 3: Train Multi-Exit Networks
-
-```bash
-python train_menm.py
-```
-
-or
-
-```bash
-python train_menm8.py
-```
-
-### Step 4: Evaluate Performance
-
-```bash
-python test_menm.py
-```
-
-Evaluation metrics include:
-
-- Classification Accuracy
-- Exit-wise Accuracy
-- Model Complexity
-- Computational Overhead
-
----
+------------------------------------------------------------------------
 
 # Reproducibility
 
-To ensure fair comparison:
+To facilitate independent verification and further research, this
+repository provides the implementation required for reproducing the main
+experiments in the paper.
 
-- The same datasets are used across experiments.
-- Training hyperparameters remain consistent.
-- Only one design factor is modified at a time.
-- Multiple backbone networks are evaluated under identical settings.
+The repository includes:
 
-This allows the isolated study of each design choice.
+-   Baseline MEN training
+-   Baseline MEN testing
+-   MESN training
+-   MESN testing
+-   IDD training
+-   Adaptive inference experiments
+-   Compression-method comparison
+-   Model implementations
+-   Supporting utilities and training procedures
 
----
+------------------------------------------------------------------------
+
+# Relationship to the Paper
+
+  Paper Component                 Implementation
+  ------------------------------- --------------------------
+  Baseline MEN training           `train_menet.py`
+  Baseline MEN testing            `test_menet.py`
+  MESN training                   `train_self_trans.py`
+  MESN testing                    `test_self_trans.py`
+  IDD training strategy           `helper/loops.py`
+  Adaptive inference              `adaptive_inference.py`
+  Different compression methods   `construct_model_svd.py`
+  Model definitions               `models/`
+  Supporting utilities            `helper/`, `utils/`
+  Comparison methods              `comparators/`
+  Dataset-related files           `dataset/`
+
+------------------------------------------------------------------------
 
 # Citation
 
-If you use this repository in your research, please cite:
+If you use this code or the proposed MESN in your research, please cite
+the corresponding paper:
 
-```bibtex
-@article{ME-Net2025,
-  title={A Unified Experimental Benchmark for Multi-Exit Network Design},
+``` bibtex
+@article{MESN,
+  title={Representation-Similarity Network Stitching for Efficient Parameter Reduction in Multi-Exit Networks},
   author={Anonymous},
-  journal={Under Review},
+  journal={Applied Soft Computing},
   year={2025}
 }
 ```
 
-If the paper has been accepted, please replace the above entry with the final publication information.
+Please replace the citation information with the final publication
+details after the paper is published.
 
----
-
-# License
-
-This project is released for academic and research purposes.
-
-You may modify and redistribute the code with proper attribution.
-
-For commercial use, please contact the authors.
-
----
+------------------------------------------------------------------------
 
 # Acknowledgements
 
-This repository is built upon the following excellent open-source projects:
-
-### MSDNet
-
-https://github.com/gaohuang/MSDNet
-
-Huang et al., *Multi-Scale Dense Networks for Resource Efficient Image Classification*, ICLR 2018.
-
-### RepDistiller
-
-https://github.com/HobbitLong/RepDistiller
-
-Tian et al., *Contrastive Representation Distillation*, ICLR 2020.
-
-We sincerely thank the authors for making their code publicly available.
-
-
+We thank the authors of the open-source projects and datasets used in
+this work for making their implementations publicly available.
